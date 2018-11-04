@@ -4,14 +4,13 @@ import java.net.URL
 import java.util.ResourceBundle
 
 import javafx.application.Application
-import javafx.collections.{FXCollections, ObservableList}
+import javafx.collections.ObservableList
 import javafx.event.ActionEvent
 import javafx.fxml.{FXMLLoader, Initializable}
 import javafx.scene.control._
 import javafx.scene.image.ImageView
 import javafx.scene.{Parent, Scene}
-import javafx.stage.Stage
-import javafx.stage.FileChooser
+import javafx.stage.{FileChooser, Stage}
 
 object LaunchClientView extends App {
   Application.launch(classOf[LaunchClientView], args: _*)

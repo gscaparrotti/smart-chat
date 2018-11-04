@@ -5,6 +5,14 @@ import OneToOneChatServer.{Attachment, Message}
 import RegisterServer._
 import akka.actor.{Actor, ActorRef, ActorSelection, ExtendedActorSystem, Props, Stash}
 import com.typesafe.config.ConfigFactory
+import akka.util.Timeout
+
+import scala.concurrent.duration._
+import akka.pattern.ask
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import scala.concurrent.Future
+import scala.util.Success
 
 class Client(system: ExtendedActorSystem) extends Actor with Stash{
 
@@ -108,18 +116,19 @@ class Client(system: ExtendedActorSystem) extends Actor with Stash{
     }
     case RequestForChatCreationFromConsole(friendName) => {
       users.find(user => user==friendName).fold({
-      register ! AllUsersAndGroupsRequest
-      unstashAll()
-      context.become({
-        case UserAndGroupActive(userList, groupList)=> {
-          users = userList
-          groups = groupList
-          unstashAll()
-          context.unbecome()
-          self ! RequestForChatCreationFromConsole(friendName)
+        println("User is not registered")
+        implicit val timeout: Timeout = Timeout(500 millis)
+        val future = register ? AllUsersAndGroupsRequest
+        //Convert Future[Any] to Future[UserAndGroupActive]
+        val responseFuture: Future[UserAndGroupActive] = future.mapTo[UserAndGroupActive]
+        responseFuture.onComplete{
+          case Success(result)=>{
+            users=result.userList
+            groups=result.groupList
+            println(users)
+            self ! RequestForChatCreationFromConsole(friendName)
+          }
         }
-        case _ => stash()
-      }, discardOld = false) // stack on top instead of replacing
       })(user => register ! NewOneToOneChatRequest(user))
     }
   }

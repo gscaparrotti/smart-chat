@@ -1,6 +1,6 @@
 package res.view
 
-import akka.actor.{ActorRef, ActorSelection, ActorSystem}
+import akka.actor.ActorRef
 import javafx.application.Application
 import javafx.event.ActionEvent
 import javafx.fxml.{FXML, FXMLLoader}
