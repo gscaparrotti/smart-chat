@@ -117,15 +117,15 @@ class Client(system: ExtendedActorSystem) extends Actor with Stash{
     case RequestForChatCreationFromConsole(friendName) => {
       users.find(user => user==friendName).fold({
         println("User is not registered")
-        implicit val timeout: Timeout = Timeout(500 millis)
-        val future = register ? AllUsersAndGroupsRequest
+        implicit val timeout: Timeout = Timeout(10 seconds)
+        val future = register.ask(MessageWrapper(AllUsersAndGroupsRequest, self))(sender = self, timeout = 10 seconds)
         //Convert Future[Any] to Future[UserAndGroupActive]
         val responseFuture: Future[UserAndGroupActive] = future.mapTo[UserAndGroupActive]
         responseFuture.onComplete{
           case Success(result)=>{
             users=result.userList
             groups=result.groupList
-            println(users)
+            println("qui" + users)
             self ! RequestForChatCreationFromConsole(friendName)
           }
         }

@@ -62,9 +62,12 @@ class RegisterServer extends Actor{
       val clientWhoAsked = sender
       val localSenderName = senderName
       findChatServerForMembers(localSenderName, friendName, server => clientWhoAsked ! ResponseForServerRefRequest(Option(server)), () => clientWhoAsked ! ResponseForServerRefRequest(Option.empty))
+    case MessageWrapper(message, originalSender) =>
+      self.tell(message, originalSender)
   }
 
   def senderName: String = {
+    println(users)
     users.find(_._2 == sender).map(u => u._1).get
   }
 
@@ -101,4 +104,5 @@ object RegisterServer {
   case class JoinGroupChatRequest(group:String)
   case class GetServerRef(friendNname:String)
   case class ContainsMembers(trueOrFalse: Boolean)
+  case class MessageWrapper(message: Any, originalSender: ActorRef)
 }
