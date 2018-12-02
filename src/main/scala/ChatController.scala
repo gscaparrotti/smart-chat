@@ -49,18 +49,18 @@ class ChatController(userName : String, clientRef : ActorRef, system: ActorSyste
 
   private val onlineImagePath = getClass.getClassLoader.getResource("res/img/online.png").toString
 
-  var chatMessage: ObservableList[HBox] = FXCollections.observableArrayList()
-  var storyComboMessageChat: Map[String,List[ComboMessage]] = Map.empty
-  var storyComboGroupMessageChat: Map[String,List[ComboMessage]] = Map.empty
-  var chatGroupFollowed: List[String] = List()
-  var userList: List[String] = List()
-  var groupList: List[String] = List()
-  var isGroupSelected: Boolean = false
-  var actualUserSelected: String =  new String()
-  var indexActualUserSelected : Int = _
-  var listNotification: List[String] = List.empty
-  var groupListNotification: List[String] = List.empty
-  var fileContent : Option[Array[Byte]] = Option.empty
+  private var chatMessage: ObservableList[HBox] = FXCollections.observableArrayList()
+  private var storyComboMessageChat: Map[String,List[ComboMessage]] = Map.empty
+  private var storyComboGroupMessageChat: Map[String,List[ComboMessage]] = Map.empty
+  private var chatGroupFollowed: List[String] = List()
+  private var userList: List[String] = List()
+  private var groupList: List[String] = List()
+  private var isGroupSelected: Boolean = false
+  private var actualUserSelected: String =  new String()
+  private var indexActualUserSelected : Int = _
+  private var listNotification: List[String] = List.empty
+  private var groupListNotification: List[String] = List.empty
+  private var fileContent : Option[Array[Byte]] = Option.empty
 
 
   override def initialize(location: URL, resources: ResourceBundle): Unit = {
@@ -88,13 +88,7 @@ class ChatController(userName : String, clientRef : ActorRef, system: ActorSyste
       val selectedGroupIndex = groupListView.getSelectionModel.getSelectedIndex
       if (mouseEvent.getButton.equals(MouseButton.PRIMARY)) {
         if (!chatGroupFollowed.contains(selectedGroupName)) {
-          val dialog = new Alert(AlertType.CONFIRMATION)
-          dialog.setTitle("Confirmation Dialog")
-          dialog.setHeaderText("Do you want to subscribe to " + selectedGroupName + "?")
-          val result = dialog.showAndWait
-          if (result.get() == ButtonType.OK) {
-            clientRef ! Client.JoinGroupRequestFromConsole(selectedGroupName)
-          }
+          confirmationDialog("Do you confirm to subscribe to " + selectedGroupName + "?", selectedGroupName, Client.JoinGroupRequestFromConsole(selectedGroupName))
         }
         isGroupSelected = true
         actualUserSelected = selectedGroupName
@@ -102,9 +96,20 @@ class ChatController(userName : String, clientRef : ActorRef, system: ActorSyste
         //remove green notification
         updateUserGroupList(userList, groupList, None, Option((actualUserSelected, true)))
         drawMessageView(actualUserSelected, isGroup = true)
-      } else if (mouseEvent.getButton.equals(MouseButton.SECONDARY) && !chatGroupFollowed.contains(selectedGroupName)) {
-        println("dx click on " + selectedGroupName)
+      } else if (mouseEvent.getButton.equals(MouseButton.SECONDARY) && chatGroupFollowed.contains(selectedGroupName)) {
+        confirmationDialog("Do you confirm to unsubscribe to " + selectedGroupName + "?",selectedGroupName,
+          Client.UnJoinGroupRequestFromConsole(selectedGroupName))
       }
+    }
+  }
+
+  def confirmationDialog(messageToDisplay: String, selectedGroup: String, messageToSend : Any): Unit ={
+    val dialog = new Alert(AlertType.CONFIRMATION)
+    dialog.setTitle("Confirmation Dialog")
+    dialog.setHeaderText(messageToDisplay)
+    val result = dialog.showAndWait
+    if (result.get() == ButtonType.OK) {
+      clientRef ! messageToSend
     }
   }
 
@@ -209,7 +214,8 @@ class ChatController(userName : String, clientRef : ActorRef, system: ActorSyste
       val textName = new Text(group)
       var icon = new ImageView()
       textName.setStyle("-fx-font: 16 arial;")
-      if (chatGroupFollowed.contains(group)) textName.setFill(Color.GREEN)
+      if (chatGroupFollowed.contains(group)) textName.setFill(Color.BLUE)
+      else textName.setFill(Color.BLACK)
       if (groupListNotification.contains(group)) {
         val onLineImage = new Image(onlineImagePath)
         icon = new ImageView(onLineImage)
@@ -290,7 +296,11 @@ class ChatController(userName : String, clientRef : ActorRef, system: ActorSyste
     updateUserGroupList(userList, groupList, Option.empty, Option.empty)
   }
 
-  def removeChatGroup(response: Boolean, groupName: String) : Unit = if (response) chatGroupFollowed = chatGroupFollowed.filter(_ != groupName)
+  def removeChatGroup(response: Boolean, groupName: String) : Unit = if (response) {
+    chatGroupFollowed = chatGroupFollowed.filter(_ != groupName)
+    updateUserGroupList(userList, groupList, None, Option((actualUserSelected, true)))
+    chatPanel.getItems.clear()
+  }
 
 }
 
